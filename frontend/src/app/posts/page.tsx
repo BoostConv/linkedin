@@ -365,7 +365,7 @@ function PostEditor({
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-[1100px] w-[95vw] max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="!max-w-[1100px] w-[95vw] max-h-[95vh] overflow-y-auto p-0">
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 border-b px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
