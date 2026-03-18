@@ -151,6 +151,19 @@ Génère {count} idées de posts LinkedIn DIFFÉRENTES et CONCRÈTES pour Sébas
 - Pense aux sujets qui génèrent du débat et de l'engagement
 - Inclus des sujets "coulisses/entrepreneuriat" (le 20% perso)
 
+=== SCORING DE PRIORITÉ (TRÈS IMPORTANT — sois strict et distribue bien) ===
+Sur {count} idées, tu DOIS respecter cette répartition :
+- "high" : MAX 2-3 idées (20-30%). Réservé UNIQUEMENT aux idées qui cochent AU MOINS 3 critères parmi :
+  1. Lien DIRECT avec un service Boost Conversion (quiz funnel, landing page, A/B test)
+  2. Données chiffrées concrètes ou étude de cas réel
+  3. Sujet tendance / actualité chaude du moment
+  4. Potentiel de débat / opinion clivante forte
+  5. Angle jamais vu dans les posts récents
+- "medium" : 4-5 idées (40-50%). Bonnes idées solides, 1-2 critères ci-dessus.
+- "low" : 2-3 idées (20-30%). Idées correctes mais génériques, déjà couvertes partiellement, ou sujets "coulisses" moins business.
+
+NE METS PAS tout en "high". Si tu hésites entre high et medium, mets medium.
+
 Réponds UNIQUEMENT en JSON avec cette structure :
 [
   {{
@@ -159,6 +172,7 @@ Réponds UNIQUEMENT en JSON avec cette structure :
     "pillar_name": "Nom du pilier",
     "template_name": "Nom du template suggéré",
     "priority": "high/medium/low",
+    "priority_reason": "Justification en 1 phrase de pourquoi cette priorité",
     "tags": ["tag1", "tag2"]
   }}
 ]"""

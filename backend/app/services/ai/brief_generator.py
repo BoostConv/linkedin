@@ -112,7 +112,15 @@ Sébastien te donne ce brief :
 - Varie les tons : opinion tranchée, retour d'expérience, data/stats, histoire, éducatif...
 - Pour chaque idée, propose une ACCROCHE (hook) concrète de 1-2 lignes
 - L'objectif business reste : convaincre des marques e-commerce de bosser avec Boost Conversion
-- Classe les idées par potentiel d'impact (high = fort potentiel viral/lead gen)
+- Classe les idées par potentiel d'impact
+
+=== SCORING DE PRIORITÉ (sois strict et distribue bien) ===
+Sur {count} angles, répartis comme suit :
+- "high" : MAX 1-2 angles. UNIQUEMENT si l'angle a un potentiel viral clair (opinion clivante, data choc, lien direct service Boost Conversion + actualité chaude)
+- "medium" : 2-3 angles. Bons angles solides avec un potentiel d'engagement correct
+- "low" : 1-2 angles. Angles intéressants mais plus classiques ou éducatifs
+
+NE METS PAS tout en "high". Si tu hésites, mets "medium".
 
 Réponds UNIQUEMENT en JSON :
 [
@@ -123,6 +131,7 @@ Réponds UNIQUEMENT en JSON :
     "template_name": "Nom du template",
     "hook_preview": "L'accroche concrète du post (1-2 lignes, prête à poster)",
     "priority": "high/medium/low",
+    "priority_reason": "Justification en 1 phrase",
     "tags": ["tag1", "tag2"],
     "channel": "linkedin/newsletter/both"
   }}

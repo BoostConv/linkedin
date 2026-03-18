@@ -193,7 +193,13 @@ CONSIGNES CRUCIALES :
 - Cherche les case studies et résultats concrets à transformer en posts
 - Propose des opinions tranchées sur les tendances trouvées
 - Au moins 2-3 idées doivent mentionner un produit/service Boost Conversion
-- Priorité "high" pour les sujets avec des données chiffrées ou des tendances fortes
+=== SCORING DE PRIORITÉ (sois strict et distribue bien) ===
+Sur {total_ideas} idées, répartis comme suit :
+- "high" : MAX 2-3 idées. UNIQUEMENT si : données chiffrées vérifiables + lien direct service Boost Conversion + angle clivant ou tendance chaude
+- "medium" : 4-5 idées. Stats intéressantes ou tendance notable, bon potentiel d'engagement
+- "low" : 2-3 idées. Sujet utile mais plus général, moins de données concrètes
+
+NE METS PAS tout en "high". Les idées sans data chiffrée précise = maximum "medium".
 
 Réponds UNIQUEMENT en JSON :
 [
@@ -203,6 +209,7 @@ Réponds UNIQUEMENT en JSON :
     "pillar_name": "Nom du pilier",
     "template_name": "Nom du template suggéré",
     "priority": "high/medium/low",
+    "priority_reason": "Justification en 1 phrase",
     "tags": ["tag1", "tag2"],
     "source_urls": ["url1", "url2"],
     "research_insight": "Le fait/stat clé qui motive cette idée (1 phrase)"
