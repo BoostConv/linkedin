@@ -365,7 +365,7 @@ function PostEditor({
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-[900px] w-full max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-[1100px] w-[95vw] max-h-[95vh] overflow-y-auto p-0">
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 border-b px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
@@ -421,7 +421,7 @@ function PostEditor({
           </div>
 
           {/* Right: Visual + Scheduling panel */}
-          <div className="w-full lg:w-[300px] p-4 space-y-4 bg-gray-50">
+          <div className="w-full lg:w-[360px] shrink-0 p-5 space-y-5 bg-gray-50">
             {/* Format-specific visual section */}
             <div>
               <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Visuel</h3>

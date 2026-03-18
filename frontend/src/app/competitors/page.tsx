@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   api,
   Competitor,
@@ -10,6 +11,13 @@ import {
   Trend,
   Recommendation,
 } from "@/lib/api";
+
+const Spinner = () => (
+  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
 
 export default function CompetitorsPage() {
   const [competitors, setCompetitors] = useState<Competitor[]>([]);
@@ -19,9 +27,24 @@ export default function CompetitorsPage() {
   const [newName, setNewName] = useState("");
   const [newUrl, setNewUrl] = useState("");
   const [adding, setAdding] = useState(false);
+  const [watchRunning, setWatchRunning] = useState(false);
+  const [watchResult, setWatchResult] = useState<{ generated: number; saved: number; sources_searched: string[] } | null>(null);
   const [activeTab, setActiveTab] = useState<
     "trends" | "top-posts" | "competitors" | "ml"
   >("trends");
+
+  const handleMultiWatch = async () => {
+    setWatchRunning(true);
+    setWatchResult(null);
+    try {
+      const result = await api.multiWatch({ save: true });
+      setWatchResult({ generated: result.generated, saved: result.saved, sources_searched: result.sources_searched });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWatchRunning(false);
+    }
+  };
 
   const loadData = () => {
     Promise.allSettled([
@@ -87,7 +110,23 @@ export default function CompetitorsPage() {
         <h1 className="text-2xl font-bold text-gray-900">
           Veille concurrentielle
         </h1>
+        <Button
+          onClick={handleMultiWatch}
+          disabled={watchRunning}
+          className="bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          {watchRunning ? <><Spinner /> Veille en cours...</> : "Lancer la veille multi-sources"}
+        </Button>
       </div>
+
+      {watchResult && (
+        <div className="bg-purple-50 rounded-lg px-4 py-3 text-sm text-purple-700 flex items-center justify-between">
+          <span>
+            Veille terminée : {watchResult.generated} idées trouvées sur {watchResult.sources_searched.join(", ")} — ajoutées dans la Boîte à idées
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setWatchResult(null)}>Fermer</Button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">

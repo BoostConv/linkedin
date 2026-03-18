@@ -689,9 +689,6 @@ export default function IdeasPage() {
           <Button onClick={() => setWebResearchOpen(true)} variant="outline" size="sm">
             Veille web
           </Button>
-          <Button onClick={handleMultiWatch} disabled={watchRunning} variant="outline" size="sm" className="border-purple-300 text-purple-700 hover:bg-purple-50">
-            {watchRunning ? <><Spinner /> Veille en cours...</> : "Veille multi-sources"}
-          </Button>
           <Button onClick={handleGenerateBank} disabled={generatingBank} variant="outline" size="sm">
             {generatingBank ? <><Spinner /> Génération...</> : "Générer 10 idées IA"}
           </Button>
