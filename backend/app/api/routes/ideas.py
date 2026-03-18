@@ -273,7 +273,38 @@ async def web_research(
     }
 
 
-@router.post("/reanalyze-all/")
+class MultiWatchRequest(BaseModel):
+    sources: list[str] | None = None  # ["google", "youtube", "twitter", "linkedin"]
+    queries_per_source: int = 2
+    save: bool = True
+
+
+@router.post("/multi-watch/")
+async def multi_watch(
+    data: MultiWatchRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run multi-source watch (Google, YouTube, Twitter, LinkedIn).
+
+    Searches for CRO/post-click/conversion trends across multiple platforms
+    and generates LinkedIn post ideas from the findings.
+    """
+    from app.services.ai.multi_watch import run_multi_watch
+
+    try:
+        result = await run_multi_watch(
+            db=db,
+            sources=data.sources,
+            queries_per_source=data.queries_per_source,
+            save=data.save,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Multi-watch failed: {str(e)}")
+
+    return result
+
+
 @router.post("/reanalyze-all/")
 async def reanalyze_all_ideas(
     batch_size: int = Query(default=8, le=20),

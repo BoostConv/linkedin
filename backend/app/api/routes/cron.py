@@ -255,3 +255,24 @@ async def cron_scrape(request: Request):
             logger.error(f"Error scraping {comp.name}: {e}")
 
     return {"scraped": total_saved, "competitors": len(competitors)}
+
+
+@router.post("/watch/")
+async def cron_watch(request: Request):
+    """Run automated multi-source watch (Google, YouTube, Twitter, LinkedIn).
+
+    Searches for CRO/post-click/conversion trends and generates post ideas.
+    Designed to run 2x/week (Monday + Thursday).
+    """
+    _verify_cron_secret(request)
+    from app.services.ai.multi_watch import run_multi_watch
+
+    async with async_session() as db:
+        result = await run_multi_watch(
+            db=db,
+            sources=["google", "youtube", "twitter", "linkedin"],
+            queries_per_source=2,
+            save=True,
+        )
+
+    return result

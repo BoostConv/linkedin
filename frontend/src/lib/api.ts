@@ -362,6 +362,29 @@ class ApiClient {
     return this.request("/ideas/web-research", { method: "POST", body: JSON.stringify(data || {}) });
   }
 
+  async multiWatch(data?: {
+    sources?: string[];
+    queries_per_source?: number;
+    save?: boolean;
+  }): Promise<{
+    ideas: {
+      title: string;
+      description: string;
+      pillar_name: string;
+      template_name: string;
+      priority: string;
+      tags: string[];
+      source_urls: string[];
+      source_type: string;
+      research_insight: string;
+    }[];
+    generated: number;
+    saved: number;
+    sources_searched: string[];
+  }> {
+    return this.request("/ideas/multi-watch", { method: "POST", body: JSON.stringify(data || {}) });
+  }
+
   // Pillars
   async listPillars(): Promise<Pillar[]> {
     return this.request("/pillars/");

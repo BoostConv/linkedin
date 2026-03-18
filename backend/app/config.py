@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     # Apify
     apify_api_token: str = ""
 
+    # YouTube Data API
+    youtube_api_key: str = ""
+
     # Cloudflare R2
     r2_account_id: str = ""
     r2_access_key_id: str = ""
