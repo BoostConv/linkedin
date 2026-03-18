@@ -1,5 +1,16 @@
+import os
+
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+
+
+def _fix_db_url(url: str, async_driver: bool = False) -> str:
+    """Convert Render's postgres:// to postgresql:// and optionally add asyncpg driver."""
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql://", 1)
+    if async_driver and "asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
 
 
 class Settings(BaseSettings):
@@ -42,6 +53,9 @@ class Settings(BaseSettings):
     email_address: str = ""
     email_password: str = ""  # App password for Gmail, or regular password
 
+    # CORS
+    cors_origins: str = "http://localhost:3000"
+
     # JWT
     jwt_algorithm: str = "HS256"
     jwt_expiration_minutes: int = 60 * 24 * 7  # 7 days
@@ -51,4 +65,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    s = Settings()
+    # Auto-fix Render's postgres:// URLs
+    s.database_url = _fix_db_url(s.database_url, async_driver=True)
+    s.database_url_sync = _fix_db_url(s.database_url_sync, async_driver=False)
+    return s
