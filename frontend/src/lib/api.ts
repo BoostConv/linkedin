@@ -47,6 +47,7 @@ export interface Post {
   cta_type: string | null;
   word_count: number | null;
   image_url: string | null;
+  carousel_url: string | null;
   status: string;
   scheduled_at: string | null;
   published_at: string | null;
