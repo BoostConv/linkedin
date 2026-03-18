@@ -1,0 +1,48 @@
+# FastAPI & server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.18
+
+# Database
+sqlalchemy==2.0.36
+asyncpg==0.30.0
+alembic==1.14.1
+psycopg2-binary==2.9.10
+
+# Redis & Celery
+celery[redis]==5.4.0
+redis==5.2.1
+
+# AI
+anthropic==0.42.0
+openai==1.58.1
+
+# Auth
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+httpx==0.28.1
+
+# Utils
+python-dotenv==1.0.1
+pydantic[email]==2.10.4
+pydantic-settings==2.7.1
+email-validator==2.2.0
+
+# Visuals
+python-pptx==1.0.2
+reportlab==4.2.5
+Pillow==11.1.0
+
+# ML
+scikit-learn==1.6.1
+pandas==2.2.3
+numpy==2.2.1
+
+# Scraping
+apify-client==1.8.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+aiosqlite==0.20.0
