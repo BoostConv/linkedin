@@ -27,10 +27,10 @@ export default function DashboardPage() {
       api.listPosts({ status: "scheduled" }),
       api.listPosts({ status: "draft" }),
       api.listIdeas({ status: "new" }),
-      fetch("http://localhost:8000/api/ai/next-pillar").then((r) =>
+      fetch("/api/ai/next-pillar").then((r) =>
         r.ok ? r.json() : null
       ),
-      fetch("http://localhost:8000/api/ai/pillar-balance").then(
+      fetch("/api/ai/pillar-balance").then(
         (r) => (r.ok ? r.json() : [])
       ),
       api.getRecommendations().catch(() => []),

@@ -377,7 +377,7 @@ export default function SettingsPage() {
               if (result.linkedin_person_id) {
                 alert("LinkedIn est connecté.");
               } else {
-                const authResult = await fetch("http://localhost:8000/api/auth/linkedin/authorize");
+                const authResult = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "/api"}/auth/linkedin/authorize`);
                 const data = await authResult.json();
                 window.open(data.authorization_url, "_blank");
               }
