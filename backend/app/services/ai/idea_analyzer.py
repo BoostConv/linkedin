@@ -2,11 +2,11 @@
 import json
 from uuid import UUID
 
-import anthropic
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.services.ai.openai_helper import openai_complete
 from app.models.pillar import Pillar
 from app.models.template import PostTemplate
 from app.models.idea import Idea
@@ -77,15 +77,11 @@ Réponds en JSON strict avec cette structure:
 
 Réponds UNIQUEMENT avec le JSON, sans commentaire."""
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
-    message = client.messages.create(
-        model=settings.claude_model,
+    response_text = openai_complete(
+        system="Tu es un analyste éditorial. Réponds uniquement en JSON strict.",
+        user=prompt,
         max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
     )
-
-    response_text = message.content[0].text.strip()
 
     # Parse JSON (handle potential markdown wrapping)
     if response_text.startswith("```"):

@@ -3,11 +3,11 @@ import json
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-import anthropic
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.services.ai.openai_helper import openai_complete
 from app.models.pillar import Pillar
 from app.models.template import PostTemplate
 from app.models.post import Post
@@ -96,8 +96,6 @@ async def generate_content_plan(
         for p in existing_posts
     ) or "Aucun post déjà planifié."
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
     prompt = f"""Génère un plan de contenu LinkedIn pour les {days} prochains jours pour Sébastien Tortu (Boost Conversion, agence CRO e-commerce).
 
 === ÉQUILIBRE DES PILIERS (14 jours) ===
@@ -137,13 +135,11 @@ Réponds en JSON array avec pour chaque jour planifié :
 
 UNIQUEMENT le JSON, sans commentaire."""
 
-    message = client.messages.create(
-        model=settings.claude_model,
+    response_text = openai_complete(
+        system="Tu es un planificateur éditorial. Réponds uniquement en JSON.",
+        user=prompt,
         max_tokens=2000,
-        messages=[{"role": "user", "content": prompt}],
     )
-
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("```")[1]
         if response_text.startswith("json"):
@@ -178,8 +174,6 @@ async def regenerate_day(
     )
     templates_text = ", ".join(t.slug for t in templates)
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-
     prompt = f"""Propose un post LinkedIn pour le {date}.
 
 Équilibre piliers : {balance_text}
@@ -189,13 +183,11 @@ Templates dispo : {templates_text}
 JSON avec : pillar_name, template_slug, format (text|carousel|image_text), topic, hook_idea.
 UNIQUEMENT le JSON."""
 
-    message = client.messages.create(
-        model=settings.claude_model,
+    response_text = openai_complete(
+        system="Tu es un planificateur éditorial. Réponds uniquement en JSON.",
+        user=prompt,
         max_tokens=500,
-        messages=[{"role": "user", "content": prompt}],
     )
-
-    response_text = message.content[0].text.strip()
     if response_text.startswith("```"):
         response_text = response_text.split("```")[1]
         if response_text.startswith("json"):

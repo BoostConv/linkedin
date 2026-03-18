@@ -307,6 +307,28 @@ function PostEditor({
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    const userMsg = { role: "user", content: chatInput.trim() };
+    const newMessages = [...chatMessages, userMsg];
+    setChatMessages(newMessages);
+    setChatInput("");
+    setChatLoading(true);
+    try {
+      const result = await api.postChat({
+        post_content: content,
+        messages: newMessages,
+        pillar_name: pillarName,
+      });
+      setChatMessages([...newMessages, { role: "assistant", content: result.reply }]);
+      if (result.updated_post) {
+        setContent(result.updated_post);
+      }
+    } catch (err) {
+      setChatMessages([...newMessages, { role: "assistant", content: `Erreur: ${err instanceof Error ? err.message : "Impossible de contacter l'IA"}` }]);
+    } finally { setChatLoading(false); }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -649,25 +671,10 @@ function PostEditor({
                 <Textarea
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && e.metaKey && chatInput.trim() && !chatLoading) {
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.metaKey) {
                       e.preventDefault();
-                      const userMsg = { role: "user", content: chatInput.trim() };
-                      const newMessages = [...chatMessages, userMsg];
-                      setChatMessages(newMessages);
-                      setChatInput("");
-                      setChatLoading(true);
-                      try {
-                        const result = await api.postChat({
-                          post_content: content,
-                          messages: newMessages,
-                          pillar_name: pillarName,
-                        });
-                        setChatMessages([...newMessages, { role: "assistant", content: result.reply }]);
-                        if (result.updated_post) {
-                          setContent(result.updated_post);
-                        }
-                      } catch { /* ignore */ } finally { setChatLoading(false); }
+                      sendChatMessage();
                     }
                   }}
                   placeholder="Ex: Peux-tu retravailler le CTA ? Cmd+Enter pour envoyer"
@@ -678,25 +685,7 @@ function PostEditor({
                   size="sm"
                   className="w-full text-xs"
                   disabled={!chatInput.trim() || chatLoading}
-                  onClick={async () => {
-                    if (!chatInput.trim()) return;
-                    const userMsg = { role: "user", content: chatInput.trim() };
-                    const newMessages = [...chatMessages, userMsg];
-                    setChatMessages(newMessages);
-                    setChatInput("");
-                    setChatLoading(true);
-                    try {
-                      const result = await api.postChat({
-                        post_content: content,
-                        messages: newMessages,
-                        pillar_name: pillarName,
-                      });
-                      setChatMessages([...newMessages, { role: "assistant", content: result.reply }]);
-                      if (result.updated_post) {
-                        setContent(result.updated_post);
-                      }
-                    } catch { /* ignore */ } finally { setChatLoading(false); }
-                  }}
+                  onClick={sendChatMessage}
                 >
                   {chatLoading ? <><Spinner /> Réflexion...</> : "Envoyer (Cmd+Enter)"}
                 </Button>

@@ -6,11 +6,11 @@ taking into account the pillar rotation algorithm for balanced content.
 import json
 from uuid import UUID
 
-import anthropic
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
+from app.services.ai.openai_helper import openai_complete
 from app.models.pillar import Pillar
 from app.models.template import PostTemplate
 from app.models.product import Product
@@ -114,15 +114,11 @@ Si le sujet ne colle vraiment pas au pilier recommandé, choisis le pilier le pl
 
 Propose un angle spécifique et concret pour le post."""
 
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    message = client.messages.create(
-        model=settings.claude_model,
-        max_tokens=1024,
+    response_text = openai_complete(
         system=system_prompt,
-        messages=[{"role": "user", "content": user_message}],
+        user=user_message,
+        max_tokens=1024,
     )
-
-    response_text = message.content[0].text.strip()
 
     # Parse JSON response
     try:

@@ -1,9 +1,8 @@
 """Analyze competitor posts to extract topics, trends, and relevance."""
 import json
 
-import anthropic
-
 from app.config import get_settings
+from app.services.ai.openai_helper import openai_complete
 
 settings = get_settings()
 
@@ -22,8 +21,6 @@ async def analyze_competitor_posts(posts: list[dict], pillar_names: list[str]) -
     """
     if not posts:
         return []
-
-    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
 
     # Build posts summary for the prompt
     posts_text = ""
@@ -54,13 +51,11 @@ Pour chaque post, réponds en JSON array avec :
 
 Réponds UNIQUEMENT avec le JSON array."""
 
-    message = client.messages.create(
-        model=settings.claude_model,
+    response_text = openai_complete(
+        system="Tu es un analyste de contenu LinkedIn. Réponds uniquement en JSON.",
+        user=prompt,
         max_tokens=2000,
-        messages=[{"role": "user", "content": prompt}],
     )
-
-    response_text = message.content[0].text.strip()
 
     # Handle markdown wrapping
     if response_text.startswith("```"):
