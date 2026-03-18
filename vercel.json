@@ -15,14 +15,14 @@
   ],
   "routes": [
     {
-      "src": "/api/(.+)",
+      "src": "/api/(.*)",
       "dest": "/api/index.py"
     },
     {
       "handle": "filesystem"
     },
     {
-      "src": "/((?!api/).*)",
+      "src": "/((?!api).*)",
       "dest": "/frontend/$1"
     }
   ],
