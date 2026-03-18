@@ -303,6 +303,9 @@ function PostEditor({
   const [suggestingVisual, setSuggestingVisual] = useState(false);
   const [generatingImage, setGeneratingImage] = useState(false);
   const [imageUrl, setImageUrl] = useState(post.image_url || "");
+  const [chatMessages, setChatMessages] = useState<{ role: string; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -613,6 +616,92 @@ function PostEditor({
                 {publishResult}
               </div>
             )}
+
+            {/* Chat with AI */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Discuter avec l&apos;IA</h3>
+
+              {/* Chat messages */}
+              <div className="bg-white rounded-lg border max-h-[250px] overflow-y-auto">
+                {chatMessages.length === 0 ? (
+                  <div className="p-3 text-center">
+                    <p className="text-xs text-gray-400">Posez une question sur ce post : angle, CTA, ton, structure...</p>
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-2">
+                    {chatMessages.map((msg, i) => (
+                      <div key={i} className={`text-xs rounded-lg px-3 py-2 ${msg.role === "user" ? "bg-blue-50 text-blue-900 ml-4" : "bg-gray-50 text-gray-800 mr-4"}`}>
+                        <p className="font-medium text-[10px] text-gray-500 mb-0.5">{msg.role === "user" ? "Vous" : "IA"}</p>
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    ))}
+                    {chatLoading && (
+                      <div className="flex items-center gap-2 text-xs text-gray-400 px-3 py-2">
+                        <Spinner /> Réflexion...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Chat input */}
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && chatInput.trim() && !chatLoading) {
+                      const userMsg = { role: "user", content: chatInput.trim() };
+                      const newMessages = [...chatMessages, userMsg];
+                      setChatMessages(newMessages);
+                      setChatInput("");
+                      setChatLoading(true);
+                      try {
+                        const result = await api.postChat({
+                          post_content: content,
+                          messages: newMessages,
+                          pillar_name: pillarName,
+                        });
+                        setChatMessages([...newMessages, { role: "assistant", content: result.reply }]);
+                        if (result.updated_post) {
+                          setContent(result.updated_post);
+                        }
+                      } catch { /* ignore */ } finally { setChatLoading(false); }
+                    }
+                  }}
+                  placeholder="Ex: Peux-tu retravailler le CTA ?"
+                  className="flex-1 text-xs border rounded px-2 py-1.5"
+                  disabled={chatLoading}
+                />
+                <Button
+                  size="sm"
+                  className="text-xs px-2 h-7"
+                  disabled={!chatInput.trim() || chatLoading}
+                  onClick={async () => {
+                    if (!chatInput.trim()) return;
+                    const userMsg = { role: "user", content: chatInput.trim() };
+                    const newMessages = [...chatMessages, userMsg];
+                    setChatMessages(newMessages);
+                    setChatInput("");
+                    setChatLoading(true);
+                    try {
+                      const result = await api.postChat({
+                        post_content: content,
+                        messages: newMessages,
+                        pillar_name: pillarName,
+                      });
+                      setChatMessages([...newMessages, { role: "assistant", content: result.reply }]);
+                      if (result.updated_post) {
+                        setContent(result.updated_post);
+                      }
+                    } catch { /* ignore */ } finally { setChatLoading(false); }
+                  }}
+                >
+                  Envoyer
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 

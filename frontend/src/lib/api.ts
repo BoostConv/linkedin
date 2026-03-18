@@ -491,6 +491,15 @@ class ApiClient {
     return this.request("/carousel/generate-pdf", { method: "POST", body: JSON.stringify(data) });
   }
 
+  async postChat(data: {
+    post_content: string;
+    messages: { role: string; content: string }[];
+    pillar_name?: string;
+    template_name?: string;
+  }): Promise<{ reply: string; updated_post: string | null }> {
+    return this.request("/ai/chat", { method: "POST", body: JSON.stringify(data) });
+  }
+
   async generateImage(data: {
     post_content: string;
     image_type?: string;

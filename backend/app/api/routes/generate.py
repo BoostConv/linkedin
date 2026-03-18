@@ -378,3 +378,97 @@ async def suggest_visual(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Visual suggestion failed: {str(e)}")
+
+
+# ─── Post Chat (discuss content with AI) ─────────────────────
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+
+class PostChatRequest(BaseModel):
+    post_content: str
+    messages: list[ChatMessage]
+    pillar_name: str = ""
+    template_name: str = ""
+
+
+class PostChatResponse(BaseModel):
+    reply: str
+    updated_post: str | None = None
+
+
+@router.post("/chat/", response_model=PostChatResponse)
+async def post_chat(
+    data: PostChatRequest,
+    _: User = Depends(get_current_user),
+):
+    """Chat with AI about a post — discuss angle, CTA, tone, structure, etc.
+
+    If the AI suggests a rewrite, it returns the updated_post field.
+    """
+    import anthropic
+    from app.config import get_settings
+
+    settings = get_settings()
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
+    system_prompt = f"""Tu es l'assistant éditorial de Sébastien Tortu, fondateur de Boost Conversion (agence CRO/post-clic pour e-commerce DTC).
+
+Tu discutes avec lui à propos d'un post LinkedIn qu'il est en train de finaliser. Ton rôle :
+- Répondre à ses questions sur l'angle, le CTA, le ton, la structure
+- Proposer des améliorations concrètes quand il demande
+- Si il demande une réécriture, fournis la version complète dans le champ "updated_post"
+- Sois direct, concis, pas de blabla
+
+RÈGLES DE TON :
+- Ton d'entrepreneur qui pense à voix haute
+- Pas de tutoiement (audience pro)
+- Varier la longueur des phrases
+- Jamais de structures "Ce n'est pas X. C'est Y."
+- Pas de tirets cadratins
+- Pas de mots bannis (game-changer, paradigme, holistique, etc.)
+
+CONTEXTE DU POST :
+Pilier : {data.pillar_name or "Non spécifié"}
+Template : {data.template_name or "Non spécifié"}
+
+CONTENU ACTUEL DU POST :
+---
+{data.post_content}
+---
+
+Réponds en JSON : {{"reply": "ta réponse", "updated_post": null ou "le post réécrit si demandé"}}"""
+
+    messages = [{"role": m.role, "content": m.content} for m in data.messages]
+
+    try:
+        response = client.messages.create(
+            model=settings.claude_model,
+            max_tokens=4096,
+            system=system_prompt,
+            messages=messages,
+        )
+
+        response_text = response.content[0].text.strip()
+
+        # Parse JSON response
+        import json
+        if response_text.startswith("```"):
+            response_text = response_text.split("```")[1]
+            if response_text.startswith("json"):
+                response_text = response_text[4:]
+            response_text = response_text.strip()
+
+        try:
+            parsed = json.loads(response_text)
+            return PostChatResponse(
+                reply=parsed.get("reply", response_text),
+                updated_post=parsed.get("updated_post"),
+            )
+        except json.JSONDecodeError:
+            return PostChatResponse(reply=response_text, updated_post=None)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
