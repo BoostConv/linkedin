@@ -5,7 +5,13 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_async_engine(settings.database_url, echo=settings.debug)
+engine = create_async_engine(
+    settings.database_url,
+    echo=settings.debug,
+    # Required for Supabase transaction pooler (pgbouncer) compatibility
+    connect_args={"statement_cache_size": 0, "prepared_statement_cache_size": 0},
+    pool_pre_ping=True,
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
