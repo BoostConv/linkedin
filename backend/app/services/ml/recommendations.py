@@ -124,7 +124,7 @@ async def get_recommendations(db: AsyncSession, user_id) -> list[dict]:
             })
 
     # Model-based insights
-    meta = get_model_meta()
+    meta = await get_model_meta(db)
     if meta and meta.get("top_features"):
         top = meta["top_features"][:3]
         feature_labels = {

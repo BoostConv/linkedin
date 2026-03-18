@@ -27,9 +27,10 @@ async def predict(
     hook_pattern: str | None = None,
     cta_type: str | None = None,
     _: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Predict performance score for a post."""
-    score = predict_score({
+    score = await predict_score(db, {
         "content": content,
         "format": format,
         "hook_pattern": hook_pattern,
@@ -41,9 +42,12 @@ async def predict(
 
 
 @router.get("/model-info")
-async def model_info(_: User = Depends(get_current_user)):
+async def model_info(
+    _: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """Get information about the current ML model."""
-    meta = get_model_meta()
+    meta = await get_model_meta(db)
     if not meta:
         return {"status": "not_trained", "message": "Aucun modèle entraîné."}
     return {"status": "trained", **meta}

@@ -1,25 +1,51 @@
 """ML model for predicting post performance.
 
 Uses GradientBoosting from scikit-learn, retrained weekly.
-Model is persisted to disk and loaded at prediction time.
+Model is persisted to database (brand_config table) and loaded at prediction time.
 """
 import json
-import os
 import pickle
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import datetime, timezone
 
 import numpy as np
-from sqlalchemy import select
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.post import Post
 from app.models.analytics import PostAnalytics
 from app.services.ml.features import extract_features, FEATURE_NAMES
 
-MODEL_DIR = Path("ml_models")
-MODEL_PATH = MODEL_DIR / "performance_model.pkl"
-META_PATH = MODEL_DIR / "model_meta.json"
+# In-memory cache to avoid reloading from DB on every prediction
+_model_cache = {"model": None, "meta": None, "loaded_at": None}
+
+
+async def _load_model_from_db(db: AsyncSession):
+    """Load model from database into cache."""
+    result = await db.execute(
+        text("SELECT model_data, meta FROM ml_models ORDER BY trained_at DESC LIMIT 1")
+    )
+    row = result.first()
+    if row and row[0]:
+        _model_cache["model"] = pickle.loads(row[0])
+        _model_cache["meta"] = row[1] if row[1] else {}
+        _model_cache["loaded_at"] = datetime.now(timezone.utc)
+        return True
+    return False
+
+
+async def _save_model_to_db(db: AsyncSession, model, meta: dict):
+    """Save model to database."""
+    model_bytes = pickle.dumps(model)
+    await db.execute(text("DELETE FROM ml_models"))
+    await db.execute(
+        text("INSERT INTO ml_models (model_data, meta) VALUES (:model_data, :meta)"),
+        {"model_data": model_bytes, "meta": json.dumps(meta)},
+    )
+    await db.commit()
+    # Update cache
+    _model_cache["model"] = model
+    _model_cache["meta"] = meta
+    _model_cache["loaded_at"] = datetime.now(timezone.utc)
 
 
 async def train_model(db: AsyncSession) -> dict:
@@ -28,6 +54,7 @@ async def train_model(db: AsyncSession) -> dict:
     Returns metadata about the training run.
     """
     from sklearn.ensemble import GradientBoostingRegressor
+    from sqlalchemy import select
 
     # Fetch posts with 24h analytics (our target metric)
     result = await db.execute(
@@ -77,11 +104,6 @@ async def train_model(db: AsyncSession) -> dict:
     )
     model.fit(X, y_norm)
 
-    # Save model
-    MODEL_DIR.mkdir(exist_ok=True)
-    with open(MODEL_PATH, "wb") as f:
-        pickle.dump(model, f)
-
     # Save metadata
     feature_importances = dict(zip(FEATURE_NAMES, model.feature_importances_.tolist()))
     top_features = sorted(feature_importances.items(), key=lambda x: x[1], reverse=True)[:10]
@@ -94,25 +116,29 @@ async def train_model(db: AsyncSession) -> dict:
         "train_score": float(model.score(X, y_norm)),
         "top_features": top_features,
     }
-    with open(META_PATH, "w") as f:
-        json.dump(meta, f, indent=2)
+
+    # Save to database
+    await _save_model_to_db(db, model, meta)
 
     return {"status": "trained", **meta}
 
 
-def predict_score(post_data: dict) -> float | None:
+async def predict_score(db: AsyncSession, post_data: dict) -> float | None:
     """Predict the performance score for a post.
 
     Returns None if model is not trained yet.
     """
-    if not MODEL_PATH.exists() or not META_PATH.exists():
+    # Load from DB if not in cache
+    if _model_cache["model"] is None:
+        loaded = await _load_model_from_db(db)
+        if not loaded:
+            return None
+
+    model = _model_cache["model"]
+    meta = _model_cache["meta"]
+
+    if not model or not meta:
         return None
-
-    with open(MODEL_PATH, "rb") as f:
-        model = pickle.load(f)
-
-    with open(META_PATH) as f:
-        meta = json.load(f)
 
     features = extract_features(post_data)
     feature_vector = [features.get(name, 0) for name in FEATURE_NAMES]
@@ -120,14 +146,13 @@ def predict_score(post_data: dict) -> float | None:
 
     # Predict normalized score, then denormalize
     y_pred_norm = model.predict(X)[0]
-    y_pred = y_pred_norm * meta["y_std"] + meta["y_mean"]
+    y_pred = y_pred_norm * meta.get("y_std", 1) + meta.get("y_mean", 0)
 
     return round(float(y_pred), 2)
 
 
-def get_model_meta() -> dict | None:
+async def get_model_meta(db: AsyncSession) -> dict | None:
     """Get metadata about the current trained model."""
-    if not META_PATH.exists():
-        return None
-    with open(META_PATH) as f:
-        return json.load(f)
+    if _model_cache["meta"] is None:
+        await _load_model_from_db(db)
+    return _model_cache["meta"]

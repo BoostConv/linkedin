@@ -1,0 +1,40 @@
+{
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/.next",
+  "installCommand": "cd frontend && npm install",
+  "framework": "nextjs",
+  "functions": {
+    "api/index.py": {
+      "runtime": "@vercel/python@4.3.1",
+      "maxDuration": 60
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.py"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/publish",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/analytics?snapshot=2h",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/analytics?snapshot=24h",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/retrain",
+      "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/scrape",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

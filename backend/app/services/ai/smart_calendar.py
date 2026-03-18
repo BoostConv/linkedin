@@ -71,7 +71,7 @@ async def generate_content_plan(
     }
 
     # Get ML insights
-    model_meta = get_model_meta()
+    model_meta = await get_model_meta(db)
 
     # Build context for Claude
     balance_text = "\n".join(
