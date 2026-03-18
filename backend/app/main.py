@@ -50,3 +50,19 @@ app.include_router(cron.router, prefix="/api/cron", tags=["Cron Jobs"])
 @app.get("/api/health/")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/debug-db")
+@app.get("/api/debug-db/")
+async def debug_db():
+    """Temporary debug endpoint to check DB connection."""
+    import traceback
+    try:
+        from app.database import async_session
+        async with async_session() as db:
+            from sqlalchemy import text
+            result = await db.execute(text("SELECT COUNT(*) FROM pillars"))
+            count = result.scalar()
+            return {"status": "connected", "pillars_count": count, "db_url_prefix": settings.database_url[:30]}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "traceback": traceback.format_exc(), "db_url_prefix": settings.database_url[:30]}
