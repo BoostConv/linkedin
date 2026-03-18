@@ -276,12 +276,15 @@ async def web_research(
 @router.post("/reanalyze-all")
 @router.post("/reanalyze-all/")
 async def reanalyze_all_ideas(
+    batch_size: int = Query(default=8, le=20),
+    offset: int = Query(default=0),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Re-analyze ALL active ideas (new, drafting, planned) to recalculate priorities.
+    """Re-analyze active ideas in batches to recalculate priorities.
 
-    This calls the AI analyzer on each idea sequentially. Can take a while.
+    Use offset to paginate through all ideas (Vercel has 60s timeout).
+    Call multiple times: offset=0, offset=8, offset=16, etc.
     """
     import logging
     logger = logging.getLogger(__name__)
@@ -293,13 +296,15 @@ async def reanalyze_all_ideas(
         .where(Idea.user_id == current_user.id, Idea.status.in_(["new", "drafting", "planned"]))
         .order_by(Idea.created_at.desc())
     )
-    ideas = list(result.scalars().all())
+    all_ideas = list(result.scalars().all())
+    total = len(all_ideas)
+    batch = all_ideas[offset:offset + batch_size]
 
     analyzed = 0
     errors = 0
     results_summary = {"high": 0, "medium": 0, "low": 0}
 
-    for idea in ideas:
+    for idea in batch:
         try:
             analysis = await analyze_idea(db, idea.id)
             priority = analysis.get("priority", "medium")
@@ -310,11 +315,18 @@ async def reanalyze_all_ideas(
             errors += 1
             logger.error(f"Failed to re-analyze idea {idea.id}: {e}")
 
+    next_offset = offset + batch_size
+    has_more = next_offset < total
+
     return {
-        "total": len(ideas),
-        "analyzed": analyzed,
-        "errors": errors,
+        "total": total,
+        "batch_analyzed": analyzed,
+        "batch_errors": errors,
         "distribution": results_summary,
+        "offset": offset,
+        "next_offset": next_offset if has_more else None,
+        "has_more": has_more,
+        "remaining": max(0, total - next_offset),
     }
 
 
