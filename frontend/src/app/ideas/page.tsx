@@ -564,6 +564,8 @@ export default function IdeasPage() {
   // New dialogs
   const [briefOpen, setBriefOpen] = useState(false);
   const [webResearchOpen, setWebResearchOpen] = useState(false);
+  const [watchRunning, setWatchRunning] = useState(false);
+  const [watchResult, setWatchResult] = useState<{ generated: number; saved: number; sources_searched: string[] } | null>(null);
 
   const pillarMap = Object.fromEntries(pillars.map((p) => [p.id, p.name]));
 
@@ -657,6 +659,20 @@ export default function IdeasPage() {
     }
   };
 
+  const handleMultiWatch = async () => {
+    setWatchRunning(true);
+    setWatchResult(null);
+    try {
+      const result = await api.multiWatch({ save: true });
+      setWatchResult({ generated: result.generated, saved: result.saved, sources_searched: result.sources_searched });
+      loadIdeas(tab);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWatchRunning(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -666,12 +682,15 @@ export default function IdeasPage() {
             {ideas.length} idées — {counts.high} haute priorité, {counts.medium} moyenne, {counts.low} basse
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={() => setBriefOpen(true)} variant="outline" size="sm">
             Depuis un brief
           </Button>
           <Button onClick={() => setWebResearchOpen(true)} variant="outline" size="sm">
             Veille web
+          </Button>
+          <Button onClick={handleMultiWatch} disabled={watchRunning} variant="outline" size="sm" className="border-purple-300 text-purple-700 hover:bg-purple-50">
+            {watchRunning ? <><Spinner /> Veille en cours...</> : "Veille multi-sources"}
           </Button>
           <Button onClick={handleGenerateBank} disabled={generatingBank} variant="outline" size="sm">
             {generatingBank ? <><Spinner /> Génération...</> : "Générer 10 idées IA"}
@@ -683,6 +702,15 @@ export default function IdeasPage() {
         <div className="bg-green-50 rounded-lg px-4 py-3 text-sm text-green-700 flex items-center justify-between">
           <span>{bankResult.generated} idées générées et ajoutées.</span>
           <Button variant="ghost" size="sm" onClick={() => setBankResult(null)}>Fermer</Button>
+        </div>
+      )}
+
+      {watchResult && (
+        <div className="bg-purple-50 rounded-lg px-4 py-3 text-sm text-purple-700 flex items-center justify-between">
+          <span>
+            Veille terminée : {watchResult.generated} idées trouvées sur {watchResult.sources_searched.join(", ")}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setWatchResult(null)}>Fermer</Button>
         </div>
       )}
 
