@@ -54,17 +54,16 @@ Contenu: {idea.raw_input}
 === TEMPLATES DISPONIBLES ===
 {template_list}
 
-=== SCORING DE PRIORITÉ (sois STRICT) ===
-- "high" : UNIQUEMENT si l'idée coche AU MOINS 3 critères :
+=== SCORING DE PRIORITÉ (sois TRÈS STRICT — la majorité des idées doivent être "medium") ===
+- "high" : RARE (environ 1 idée sur 5). UNIQUEMENT si TOUS ces critères sont remplis :
   1. Lien DIRECT avec un service Boost Conversion (quiz funnel, landing page, A/B test, whitelisting)
-  2. Données chiffrées concrètes ou étude de cas réel
-  3. Sujet tendance / actualité chaude 2026
-  4. Potentiel de débat / opinion clivante forte
-  5. Angle original jamais vu
-- "medium" : 1-2 critères ci-dessus. Bonne idée solide.
-- "low" : Idée correcte mais générique, déjà traitée, ou peu de données concrètes.
+  2. ET données chiffrées concrètes (%, €, x fois)
+  3. ET sujet tendance 2026 OU opinion très clivante
+  Si l'un de ces 3 manque → ce n'est PAS "high".
+- "medium" : LE PLUS COURANT (environ 3 idées sur 5). Bonne idée avec au moins un point fort.
+- "low" : (environ 1 idée sur 5). Idée vague, générique, sans données concrètes, sujet déjà traité, ou thème "coulisses" sans lien business.
 
-En cas de doute entre high et medium → mets "medium".
+RÈGLE D'OR : en cas de doute → "medium". Tu dois être aussi exigeant qu'un éditeur en chef.
 
 Réponds en JSON strict avec cette structure:
 {{
