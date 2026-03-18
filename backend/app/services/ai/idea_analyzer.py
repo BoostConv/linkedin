@@ -54,12 +54,25 @@ Contenu: {idea.raw_input}
 === TEMPLATES DISPONIBLES ===
 {template_list}
 
+=== SCORING DE PRIORITÉ (sois STRICT) ===
+- "high" : UNIQUEMENT si l'idée coche AU MOINS 3 critères :
+  1. Lien DIRECT avec un service Boost Conversion (quiz funnel, landing page, A/B test, whitelisting)
+  2. Données chiffrées concrètes ou étude de cas réel
+  3. Sujet tendance / actualité chaude 2026
+  4. Potentiel de débat / opinion clivante forte
+  5. Angle original jamais vu
+- "medium" : 1-2 critères ci-dessus. Bonne idée solide.
+- "low" : Idée correcte mais générique, déjà traitée, ou peu de données concrètes.
+
+En cas de doute entre high et medium → mets "medium".
+
 Réponds en JSON strict avec cette structure:
 {{
   "suggested_pillar_id": "UUID du pilier le plus pertinent",
   "suggested_template_id": "UUID du template le plus adapté",
   "suggested_angle": "Description de l'angle à prendre pour le post (2-3 phrases)",
-  "priority": "high/medium/low (basé sur la pertinence et l'actualité du sujet)",
+  "priority": "high/medium/low",
+  "priority_reason": "Justification en 1 phrase de pourquoi cette priorité",
   "tags": ["tag1", "tag2", "tag3"]
 }}
 

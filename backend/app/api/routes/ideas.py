@@ -273,6 +273,51 @@ async def web_research(
     }
 
 
+@router.post("/reanalyze-all")
+@router.post("/reanalyze-all/")
+async def reanalyze_all_ideas(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Re-analyze ALL active ideas (new, drafting, planned) to recalculate priorities.
+
+    This calls the AI analyzer on each idea sequentially. Can take a while.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+
+    from app.services.ai.idea_analyzer import analyze_idea
+
+    result = await db.execute(
+        select(Idea)
+        .where(Idea.user_id == current_user.id, Idea.status.in_(["new", "drafting", "planned"]))
+        .order_by(Idea.created_at.desc())
+    )
+    ideas = list(result.scalars().all())
+
+    analyzed = 0
+    errors = 0
+    results_summary = {"high": 0, "medium": 0, "low": 0}
+
+    for idea in ideas:
+        try:
+            analysis = await analyze_idea(db, idea.id)
+            priority = analysis.get("priority", "medium")
+            results_summary[priority] = results_summary.get(priority, 0) + 1
+            analyzed += 1
+            logger.info(f"Re-analyzed idea {idea.id}: priority={priority}")
+        except Exception as e:
+            errors += 1
+            logger.error(f"Failed to re-analyze idea {idea.id}: {e}")
+
+    return {
+        "total": len(ideas),
+        "analyzed": analyzed,
+        "errors": errors,
+        "distribution": results_summary,
+    }
+
+
 @router.delete("/{idea_id}", status_code=204)
 async def delete_idea(
     idea_id: UUID,
