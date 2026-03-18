@@ -645,13 +645,13 @@ function PostEditor({
               </div>
 
               {/* Chat input */}
-              <div className="flex gap-1.5">
-                <input
-                  type="text"
+              <div className="space-y-1.5">
+                <Textarea
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={async (e) => {
-                    if (e.key === "Enter" && chatInput.trim() && !chatLoading) {
+                    if (e.key === "Enter" && e.metaKey && chatInput.trim() && !chatLoading) {
+                      e.preventDefault();
                       const userMsg = { role: "user", content: chatInput.trim() };
                       const newMessages = [...chatMessages, userMsg];
                       setChatMessages(newMessages);
@@ -670,13 +670,13 @@ function PostEditor({
                       } catch { /* ignore */ } finally { setChatLoading(false); }
                     }
                   }}
-                  placeholder="Ex: Peux-tu retravailler le CTA ?"
-                  className="flex-1 text-xs border rounded px-2 py-1.5"
+                  placeholder="Ex: Peux-tu retravailler le CTA ? Cmd+Enter pour envoyer"
+                  className="min-h-[80px] text-sm"
                   disabled={chatLoading}
                 />
                 <Button
                   size="sm"
-                  className="text-xs px-2 h-7"
+                  className="w-full text-xs"
                   disabled={!chatInput.trim() || chatLoading}
                   onClick={async () => {
                     if (!chatInput.trim()) return;
@@ -698,7 +698,7 @@ function PostEditor({
                     } catch { /* ignore */ } finally { setChatLoading(false); }
                   }}
                 >
-                  Envoyer
+                  {chatLoading ? <><Spinner /> Réflexion...</> : "Envoyer (Cmd+Enter)"}
                 </Button>
               </div>
             </div>
