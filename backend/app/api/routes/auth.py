@@ -50,13 +50,13 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me/")
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
 # LinkedIn OAuth
-@router.get("/linkedin/authorize")
+@router.get("/linkedin/authorize/")
 async def linkedin_authorize():
     from app.services.linkedin.client import get_authorization_url
     import secrets
@@ -64,7 +64,7 @@ async def linkedin_authorize():
     return {"authorization_url": get_authorization_url(state), "state": state}
 
 
-@router.get("/linkedin/callback")
+@router.get("/linkedin/callback/")
 async def linkedin_callback(
     code: str,
     state: str = "",
