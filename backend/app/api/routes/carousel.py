@@ -164,3 +164,34 @@ async def preview_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": "inline; filename=carousel-preview.pdf"},
     )
+
+
+class ImageGenerateRequest(BaseModel):
+    post_content: str
+    image_type: str = "illustration"  # illustration, data_viz, before_after, quote_bg, portrait_bg
+    pillar_name: str = ""
+
+
+class ImageGenerateResponse(BaseModel):
+    image_url: str
+    prompt_used: str
+
+
+@router.post("/generate-image/", response_model=ImageGenerateResponse)
+async def generate_image_endpoint(
+    data: ImageGenerateRequest,
+    _: User = Depends(get_current_user),
+):
+    """Generate an image for a post using DALL-E 3."""
+    from app.services.visual.image_gen import generate_image, build_image_prompt
+
+    try:
+        prompt = build_image_prompt(
+            post_content=data.post_content,
+            image_type=data.image_type,
+            pillar_name=data.pillar_name,
+        )
+        image_url = await generate_image(prompt, size="1792x1024")
+        return ImageGenerateResponse(image_url=image_url, prompt_used=prompt)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image generation failed: {str(e)}")

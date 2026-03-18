@@ -23,6 +23,13 @@ import {
   VisualSuggestion,
 } from "@/lib/api";
 
+const Spinner = () => (
+  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+  </svg>
+);
+
 const statusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: "Brouillon", className: "bg-gray-100 text-gray-700" },
   review: { label: "En revue", className: "bg-yellow-100 text-yellow-700" },
@@ -292,6 +299,10 @@ function PostEditor({
   );
   const [showScheduler, setShowScheduler] = useState(false);
   const [currentStatus, setCurrentStatus] = useState(post.status);
+  const [visualSuggestion, setVisualSuggestion] = useState<VisualSuggestion | null>(null);
+  const [suggestingVisual, setSuggestingVisual] = useState(false);
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [imageUrl, setImageUrl] = useState(post.image_url || "");
 
   const handleSave = async () => {
     setSaving(true);
@@ -422,46 +433,105 @@ function PostEditor({
 
           {/* Right: Visual + Scheduling panel */}
           <div className="w-full lg:w-[360px] shrink-0 p-5 space-y-5 bg-gray-50">
-            {/* Format-specific visual section */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Visuel</h3>
-              {format === "text" && (
-                <div className="bg-white rounded-lg p-3 border text-center">
-                  <p className="text-sm text-gray-500">Post texte uniquement</p>
-                  <p className="text-xs text-gray-400 mt-1">Pas de visuel attaché</p>
+            {/* Visual section */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Visuel</h3>
+
+              {/* Suggestion IA */}
+              {!visualSuggestion && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs"
+                  disabled={suggestingVisual}
+                  onClick={async () => {
+                    setSuggestingVisual(true);
+                    try {
+                      const suggestion = await api.suggestVisual(content, pillarName);
+                      setVisualSuggestion(suggestion);
+                      if (suggestion.visual_type === "carousel") setFormat("carousel");
+                      else if (suggestion.visual_type === "image") setFormat("image_text");
+                      else setFormat("text");
+                    } catch { /* ignore */ } finally { setSuggestingVisual(false); }
+                  }}
+                >
+                  {suggestingVisual ? <><Spinner /> Analyse du visuel...</> : "Suggérer un visuel (IA)"}
+                </Button>
+              )}
+
+              {visualSuggestion && (
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-3 border border-purple-100 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-purple-100 text-purple-700 text-xs">
+                      {visualSuggestion.visual_type === "carousel" ? "Carousel" : visualSuggestion.visual_type === "image" ? "Image" : "Texte seul"}
+                    </Badge>
+                    <button onClick={() => setVisualSuggestion(null)} className="text-xs text-gray-400 ml-auto">Refaire</button>
+                  </div>
+                  <p className="text-xs text-gray-700">{visualSuggestion.visual_description}</p>
+                  {visualSuggestion.carousel_slides && visualSuggestion.carousel_slides.length > 0 && (
+                    <div className="space-y-1 mt-2">
+                      <p className="text-[10px] font-medium text-purple-700">Plan du carousel :</p>
+                      {visualSuggestion.carousel_slides.map((slide) => (
+                        <p key={slide.slide_number} className="text-[10px] text-gray-600">#{slide.slide_number} {slide.title}</p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
+
+              {/* Image preview / generation */}
               {format === "image_text" && (
                 <div className="space-y-2">
-                  {post.image_url ? (
+                  {imageUrl ? (
                     <div className="relative">
-                      <img src={post.image_url} alt="Post visual" className="w-full rounded-lg border" />
+                      <img src={imageUrl} alt="Post visual" className="w-full rounded-lg border" />
                       <button
-                        onClick={() => api.updatePost(post.id, { image_url: "" } as Partial<Post>).then(onSaved)}
+                        onClick={() => { setImageUrl(""); api.updatePost(post.id, { image_url: "" } as Partial<Post>); }}
                         className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
                       >x</button>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-lg p-4 border border-dashed border-gray-300 text-center">
+                    <div className="bg-white rounded-lg p-3 border border-dashed border-gray-300 text-center space-y-2">
                       <p className="text-sm text-gray-500">Aucune image</p>
-                      <p className="text-xs text-gray-400 mt-1">Fonctionnalité upload bientôt disponible</p>
+                      <Button
+                        size="sm"
+                        className="w-full text-xs bg-indigo-600 hover:bg-indigo-700"
+                        disabled={generatingImage}
+                        onClick={async () => {
+                          setGeneratingImage(true);
+                          try {
+                            const result = await api.generateImage({ post_content: content, pillar_name: pillarName });
+                            setImageUrl(result.image_url);
+                            await api.updatePost(post.id, { image_url: result.image_url } as Partial<Post>);
+                          } catch (err) {
+                            alert("Erreur de génération image: " + (err instanceof Error ? err.message : "Erreur"));
+                          } finally { setGeneratingImage(false); }
+                        }}
+                      >
+                        {generatingImage ? <><Spinner /> Génération DALL-E...</> : "Générer une image (DALL-E)"}
+                      </Button>
                     </div>
                   )}
                 </div>
               )}
+
+              {/* Carousel */}
               {format === "carousel" && (
-                <div className="space-y-2">
+                <div className="bg-white rounded-lg p-3 border border-dashed border-gray-300 text-center space-y-2">
                   {post.carousel_url ? (
-                    <div className="bg-white rounded-lg p-3 border">
+                    <>
                       <p className="text-sm text-green-700">Carousel PDF prêt</p>
                       <a href={post.carousel_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">Voir le PDF</a>
-                    </div>
+                    </>
                   ) : (
-                    <div className="bg-white rounded-lg p-4 border border-dashed border-gray-300 text-center">
-                      <p className="text-sm text-gray-500">Aucun carousel</p>
-                      <p className="text-xs text-gray-400 mt-1">Fonctionnalité génération bientôt disponible</p>
-                    </div>
+                    <p className="text-xs text-gray-400">Carousel — utilisez la page Carousel pour générer les slides</p>
                   )}
+                </div>
+              )}
+
+              {format === "text" && !visualSuggestion && (
+                <div className="bg-white rounded-lg p-3 border text-center">
+                  <p className="text-xs text-gray-400">Post texte uniquement</p>
                 </div>
               )}
             </div>

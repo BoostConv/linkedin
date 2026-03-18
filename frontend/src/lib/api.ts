@@ -491,6 +491,14 @@ class ApiClient {
     return this.request("/carousel/generate-pdf", { method: "POST", body: JSON.stringify(data) });
   }
 
+  async generateImage(data: {
+    post_content: string;
+    image_type?: string;
+    pillar_name?: string;
+  }): Promise<{ image_url: string; prompt_used: string }> {
+    return this.request("/carousel/generate-image", { method: "POST", body: JSON.stringify(data) });
+  }
+
   // Competitors
   async listCompetitors(): Promise<Competitor[]> {
     return this.request("/competitors/");
