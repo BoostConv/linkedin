@@ -15,6 +15,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
+    redirect_slashes=False,
 )
 
 app.add_middleware(
@@ -46,5 +47,6 @@ app.include_router(cron.router, prefix="/api/cron", tags=["Cron Jobs"])
 
 
 @app.get("/api/health")
+@app.get("/api/health/")
 async def health():
     return {"status": "ok"}
