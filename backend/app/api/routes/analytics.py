@@ -24,7 +24,7 @@ class AnalyticsSummary(BaseModel):
     best_composite_score: float | None = None
 
 
-@router.get("/summary", response_model=AnalyticsSummary)
+@router.get("/summary/", response_model=AnalyticsSummary)
 async def get_summary(
     days: int = Query(default=30, le=365),
     db: AsyncSession = Depends(get_db),
@@ -65,7 +65,7 @@ async def get_summary(
     )
 
 
-@router.get("/posts/{post_id}")
+@router.get("/posts/{post_id}/")
 async def get_post_analytics(
     post_id: UUID,
     db: AsyncSession = Depends(get_db),

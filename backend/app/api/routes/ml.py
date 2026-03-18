@@ -11,7 +11,7 @@ from app.services.ml.recommendations import get_recommendations
 router = APIRouter()
 
 
-@router.get("/recommendations")
+@router.get("/recommendations/")
 async def recommendations(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -20,7 +20,7 @@ async def recommendations(
     return await get_recommendations(db, current_user.id)
 
 
-@router.post("/predict")
+@router.post("/predict/")
 async def predict(
     content: str,
     format: str = "text",
@@ -41,7 +41,7 @@ async def predict(
     return {"predicted_score": score}
 
 
-@router.get("/model-info")
+@router.get("/model-info/")
 async def model_info(
     _: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
@@ -53,7 +53,7 @@ async def model_info(
     return {"status": "trained", **meta}
 
 
-@router.post("/retrain")
+@router.post("/retrain/")
 async def retrain(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),

@@ -64,7 +64,7 @@ async def create_pillar(
     return pillar
 
 
-@router.patch("/{pillar_id}", response_model=PillarResponse)
+@router.patch("/{pillar_id}/", response_model=PillarResponse)
 async def update_pillar(
     pillar_id: UUID,
     data: PillarUpdate,
@@ -84,7 +84,7 @@ async def update_pillar(
     return pillar
 
 
-@router.delete("/{pillar_id}", status_code=204)
+@router.delete("/{pillar_id}/", status_code=204)
 async def delete_pillar(
     pillar_id: UUID,
     db: AsyncSession = Depends(get_db),

@@ -103,7 +103,7 @@ async def update_brand_config(
     return BrandConfigResponse(**config)
 
 
-@router.post("/reset", response_model=BrandConfigResponse)
+@router.post("/reset/", response_model=BrandConfigResponse)
 async def reset_brand_config(
     _: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

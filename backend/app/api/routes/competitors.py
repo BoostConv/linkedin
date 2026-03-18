@@ -61,7 +61,7 @@ async def create_competitor(
     return {"id": str(comp.id), "name": comp.name, "linkedin_url": comp.linkedin_url}
 
 
-@router.patch("/{competitor_id}")
+@router.patch("/{competitor_id}/")
 async def update_competitor(
     competitor_id: UUID,
     data: CompetitorUpdate,
@@ -82,7 +82,7 @@ async def update_competitor(
     return {"id": str(comp.id), "name": comp.name, "linkedin_url": comp.linkedin_url, "is_active": comp.is_active}
 
 
-@router.delete("/{competitor_id}")
+@router.delete("/{competitor_id}/")
 async def delete_competitor(
     competitor_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -99,7 +99,7 @@ async def delete_competitor(
     return {"status": "deleted"}
 
 
-@router.get("/{competitor_id}/posts")
+@router.get("/{competitor_id}/posts/")
 async def list_competitor_posts(
     competitor_id: UUID,
     limit: int = 20,
@@ -134,7 +134,7 @@ async def list_competitor_posts(
     ]
 
 
-@router.get("/trends")
+@router.get("/trends/")
 async def get_trends(
     days: int = 14,
     db: AsyncSession = Depends(get_db),
@@ -187,7 +187,7 @@ async def get_trends(
     return sorted(trends, key=lambda x: x["trend_score"], reverse=True)[:20]
 
 
-@router.get("/top-posts")
+@router.get("/top-posts/")
 async def get_top_posts(
     days: int = 14,
     limit: int = 10,

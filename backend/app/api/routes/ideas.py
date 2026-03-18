@@ -88,7 +88,7 @@ async def create_idea(
     return idea
 
 
-@router.get("/{idea_id}", response_model=IdeaResponse)
+@router.get("/{idea_id}/", response_model=IdeaResponse)
 async def get_idea(
     idea_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -103,7 +103,7 @@ async def get_idea(
     return idea
 
 
-@router.patch("/{idea_id}", response_model=IdeaResponse)
+@router.patch("/{idea_id}/", response_model=IdeaResponse)
 async def update_idea(
     idea_id: UUID,
     data: IdeaUpdate,
@@ -125,7 +125,7 @@ async def update_idea(
     return idea
 
 
-@router.post("/{idea_id}/analyze", response_model=IdeaResponse)
+@router.post("/{idea_id}/analyze/", response_model=IdeaResponse)
 async def analyze_idea_endpoint(
     idea_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -155,7 +155,7 @@ class GenerateIdeasRequest(BaseModel):
     save: bool = True
 
 
-@router.post("/generate-bank")
+@router.post("/generate-bank/")
 async def generate_idea_bank(
     data: GenerateIdeasRequest,
     db: AsyncSession = Depends(get_db),
@@ -196,7 +196,7 @@ class BriefRequest(BaseModel):
     save_selected: list[int] | None = None  # indices of ideas to save
 
 
-@router.post("/generate-from-brief")
+@router.post("/generate-from-brief/")
 async def generate_from_brief(
     data: BriefRequest,
     db: AsyncSession = Depends(get_db),
@@ -239,7 +239,7 @@ class WebResearchRequest(BaseModel):
     save: bool = True
 
 
-@router.post("/web-research")
+@router.post("/web-research/")
 async def web_research(
     data: WebResearchRequest,
     db: AsyncSession = Depends(get_db),
@@ -273,7 +273,7 @@ async def web_research(
     }
 
 
-@router.post("/reanalyze-all")
+@router.post("/reanalyze-all/")
 @router.post("/reanalyze-all/")
 async def reanalyze_all_ideas(
     batch_size: int = Query(default=8, le=20),
@@ -330,7 +330,7 @@ async def reanalyze_all_ideas(
     }
 
 
-@router.delete("/{idea_id}", status_code=204)
+@router.delete("/{idea_id}/", status_code=204)
 async def delete_idea(
     idea_id: UUID,
     db: AsyncSession = Depends(get_db),

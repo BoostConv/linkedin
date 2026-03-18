@@ -73,7 +73,7 @@ async def create_rule(
     return rule
 
 
-@router.patch("/{rule_id}", response_model=WritingRuleResponse)
+@router.patch("/{rule_id}/", response_model=WritingRuleResponse)
 async def update_rule(
     rule_id: UUID,
     data: WritingRuleUpdate,
@@ -93,7 +93,7 @@ async def update_rule(
     return rule
 
 
-@router.delete("/{rule_id}", status_code=204)
+@router.delete("/{rule_id}/", status_code=204)
 async def delete_rule(
     rule_id: UUID,
     db: AsyncSession = Depends(get_db),

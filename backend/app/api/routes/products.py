@@ -135,7 +135,7 @@ async def create_product(
     )
 
 
-@router.patch("/{product_id}", response_model=ProductResponse)
+@router.patch("/{product_id}/", response_model=ProductResponse)
 async def update_product(
     product_id: UUID,
     data: ProductUpdate,
@@ -171,7 +171,7 @@ async def update_product(
     )
 
 
-@router.delete("/{product_id}")
+@router.delete("/{product_id}/")
 async def delete_product(
     product_id: UUID,
     db: AsyncSession = Depends(get_db),

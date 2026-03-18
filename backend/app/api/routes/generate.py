@@ -53,7 +53,7 @@ class GeneratedPost(BaseModel):
     post_id: UUID | None = None  # If saved as draft
 
 
-@router.post("/generate", response_model=GeneratedPost)
+@router.post("/generate/", response_model=GeneratedPost)
 async def generate(
     data: GenerateRequest,
     db: AsyncSession = Depends(get_db),
@@ -104,7 +104,7 @@ async def generate(
     )
 
 
-@router.post("/generate/variants", response_model=list[GeneratedPost])
+@router.post("/generate/variants/", response_model=list[GeneratedPost])
 async def generate_variants(
     data: GenerateVariantsRequest,
     db: AsyncSession = Depends(get_db),
@@ -137,7 +137,7 @@ async def generate_variants(
     return results
 
 
-@router.post("/validate", response_model=ValidationResult)
+@router.post("/validate/", response_model=ValidationResult)
 async def validate(
     data: ValidateRequest,
     _: User = Depends(get_current_user),
@@ -145,7 +145,7 @@ async def validate(
     return validate_post(data.content)
 
 
-@router.get("/next-pillar")
+@router.get("/next-pillar/")
 async def next_pillar(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -158,7 +158,7 @@ async def next_pillar(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/pillar-balance")
+@router.get("/pillar-balance/")
 async def pillar_balance(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -186,7 +186,7 @@ class AutoGenerateResponse(BaseModel):
     reasoning: str
 
 
-@router.post("/generate/auto", response_model=AutoGenerateResponse)
+@router.post("/generate/auto/", response_model=AutoGenerateResponse)
 async def generate_auto(
     data: AutoGenerateRequest,
     db: AsyncSession = Depends(get_db),
@@ -285,7 +285,7 @@ class CaseStudyRequest(BaseModel):
     save_as_draft: bool = True
 
 
-@router.post("/generate/case-study")
+@router.post("/generate/case-study/")
 async def generate_case_study_endpoint(
     data: CaseStudyRequest,
     db: AsyncSession = Depends(get_db),
@@ -357,7 +357,7 @@ class VisualSuggestionResponse(BaseModel):
     carousel_slides: list[CarouselSlideIdea] | None = None
 
 
-@router.post("/suggest-visual", response_model=VisualSuggestionResponse)
+@router.post("/suggest-visual/", response_model=VisualSuggestionResponse)
 async def suggest_visual(
     data: VisualSuggestionRequest,
     _: User = Depends(get_current_user),

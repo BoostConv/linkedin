@@ -70,7 +70,7 @@ class RegenerateDayRequest(BaseModel):
     constraints: str | None = None
 
 
-@router.post("/generate-plan")
+@router.post("/generate-plan/")
 async def generate_plan(
     data: ContentPlanRequest,
     db: AsyncSession = Depends(get_db),
@@ -81,7 +81,7 @@ async def generate_plan(
     return plan
 
 
-@router.post("/regenerate-day")
+@router.post("/regenerate-day/")
 async def regenerate_day_endpoint(
     data: RegenerateDayRequest,
     db: AsyncSession = Depends(get_db),

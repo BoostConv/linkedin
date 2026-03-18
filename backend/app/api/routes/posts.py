@@ -128,7 +128,7 @@ async def create_post(
     return post
 
 
-@router.get("/{post_id}", response_model=PostResponse)
+@router.get("/{post_id}/", response_model=PostResponse)
 async def get_post(
     post_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -143,7 +143,7 @@ async def get_post(
     return post
 
 
-@router.patch("/{post_id}", response_model=PostResponse)
+@router.patch("/{post_id}/", response_model=PostResponse)
 async def update_post(
     post_id: UUID,
     data: PostUpdate,
@@ -169,7 +169,7 @@ async def update_post(
     return post
 
 
-@router.delete("/{post_id}", status_code=204)
+@router.delete("/{post_id}/", status_code=204)
 async def delete_post(
     post_id: UUID,
     db: AsyncSession = Depends(get_db),

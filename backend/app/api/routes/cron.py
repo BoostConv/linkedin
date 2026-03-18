@@ -40,7 +40,7 @@ def _verify_cron_secret(request: Request):
         raise HTTPException(status_code=401, detail="Invalid cron secret")
 
 
-@router.post("/publish")
+@router.post("/publish/")
 async def cron_publish(request: Request):
     """Publish scheduled posts that are due."""
     _verify_cron_secret(request)
@@ -98,7 +98,7 @@ async def cron_publish(request: Request):
     return {"published": published, "checked": len(posts)}
 
 
-@router.post("/analytics")
+@router.post("/analytics/")
 async def cron_analytics(request: Request, snapshot: str = "24h"):
     """Collect analytics for published posts matching the snapshot window."""
     _verify_cron_secret(request)
@@ -173,7 +173,7 @@ async def cron_analytics(request: Request, snapshot: str = "24h"):
     return {"collected": collected, "checked": len(posts), "snapshot": snapshot}
 
 
-@router.post("/retrain")
+@router.post("/retrain/")
 async def cron_retrain(request: Request):
     """Retrain the ML performance prediction model."""
     _verify_cron_secret(request)
@@ -185,7 +185,7 @@ async def cron_retrain(request: Request):
     return result
 
 
-@router.post("/scrape")
+@router.post("/scrape/")
 async def cron_scrape(request: Request):
     """Scrape competitor posts and analyze them."""
     _verify_cron_secret(request)

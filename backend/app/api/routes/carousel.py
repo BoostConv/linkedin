@@ -61,7 +61,7 @@ class CarouselPDFResponse(BaseModel):
     post_id: str | None = None
 
 
-@router.post("/generate-slides", response_model=CarouselGenerateResponse)
+@router.post("/generate-slides/", response_model=CarouselGenerateResponse)
 async def generate_slides(
     data: CarouselGenerateRequest,
     _: User = Depends(get_current_user),
@@ -81,7 +81,7 @@ async def generate_slides(
     )
 
 
-@router.post("/generate-pdf", response_model=CarouselPDFResponse)
+@router.post("/generate-pdf/", response_model=CarouselPDFResponse)
 async def generate_pdf(
     data: CarouselPDFRequest,
     db: AsyncSession = Depends(get_db),
@@ -136,7 +136,7 @@ async def generate_pdf(
     return CarouselPDFResponse(pdf_base64=pdf_b64, post_id=post_id)
 
 
-@router.post("/preview-pdf")
+@router.post("/preview-pdf/")
 async def preview_pdf(
     data: CarouselPDFRequest,
     _: User = Depends(get_current_user),

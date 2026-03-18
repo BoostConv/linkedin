@@ -72,7 +72,7 @@ async def list_comments(
     ]
 
 
-@router.post("/fetch/{post_id}")
+@router.post("/fetch/{post_id}/")
 async def fetch_comments(
     post_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -137,7 +137,7 @@ async def fetch_comments(
     return {"new_comments": new_count, "total_raw": len(raw_comments)}
 
 
-@router.post("/suggest/{comment_id}")
+@router.post("/suggest/{comment_id}/")
 async def suggest_comment_reply(
     comment_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -169,7 +169,7 @@ async def suggest_comment_reply(
     return {"suggested_reply": reply}
 
 
-@router.post("/suggest-batch/{post_id}")
+@router.post("/suggest-batch/{post_id}/")
 async def suggest_batch_replies(
     post_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -217,7 +217,7 @@ async def suggest_batch_replies(
     return {"suggested": len(suggestion_map)}
 
 
-@router.post("/approve/{comment_id}")
+@router.post("/approve/{comment_id}/")
 async def approve_reply(
     comment_id: UUID,
     data: ReplyApproval,
@@ -237,7 +237,7 @@ async def approve_reply(
     return {"status": "approved"}
 
 
-@router.post("/send/{comment_id}")
+@router.post("/send/{comment_id}/")
 async def send_reply(
     comment_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -277,7 +277,7 @@ async def send_reply(
     return {"status": "sent", "linkedin_reply_id": comment.linkedin_reply_id}
 
 
-@router.post("/skip/{comment_id}")
+@router.post("/skip/{comment_id}/")
 async def skip_comment(
     comment_id: UUID,
     db: AsyncSession = Depends(get_db),

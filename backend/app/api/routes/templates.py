@@ -72,7 +72,7 @@ async def create_template(
     return template
 
 
-@router.get("/{template_id}", response_model=TemplateResponse)
+@router.get("/{template_id}/", response_model=TemplateResponse)
 async def get_template(
     template_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -85,7 +85,7 @@ async def get_template(
     return template
 
 
-@router.patch("/{template_id}", response_model=TemplateResponse)
+@router.patch("/{template_id}/", response_model=TemplateResponse)
 async def update_template(
     template_id: UUID,
     data: TemplateUpdate,

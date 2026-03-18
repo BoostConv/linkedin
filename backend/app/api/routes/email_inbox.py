@@ -32,7 +32,7 @@ class PollResult(BaseModel):
     details: list[str]
 
 
-@router.get("/config", response_model=EmailConfigResponse)
+@router.get("/config/", response_model=EmailConfigResponse)
 async def get_email_config(
     _: User = Depends(get_current_user),
 ):
@@ -44,7 +44,7 @@ async def get_email_config(
     )
 
 
-@router.post("/config")
+@router.post("/config/")
 async def update_email_config(
     data: EmailConfig,
     _: User = Depends(get_current_user),
@@ -98,7 +98,7 @@ async def update_email_config(
     }
 
 
-@router.post("/poll", response_model=PollResult)
+@router.post("/poll/", response_model=PollResult)
 async def poll_emails(
     db: AsyncSession = Depends(get_db),
     _: User = Depends(get_current_user),
