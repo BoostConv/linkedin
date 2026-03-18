@@ -272,6 +272,10 @@ class ApiClient {
     return this.request(`/posts/${id}`, { method: "DELETE" });
   }
 
+  async publishPost(id: string): Promise<{ status: string; linkedin_post_id: string }> {
+    return this.request(`/posts/${id}/publish`, { method: "POST" });
+  }
+
   // Ideas
   async listIdeas(params?: { status?: string }): Promise<Idea[]> {
     const query = params ? "?" + new URLSearchParams(params as Record<string, string>) : "";

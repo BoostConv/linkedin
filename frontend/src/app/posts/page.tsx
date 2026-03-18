@@ -269,7 +269,7 @@ function VisualSuggestionPanel({ post, pillarName }: { post: Post; pillarName: s
   );
 }
 
-// ─── Post Editor ─────────────────────────────────────────────
+// ─── Post Editor (full finalization) ─────────────────────────
 function PostEditor({
   post,
   pillarName,
@@ -282,13 +282,21 @@ function PostEditor({
   onClose: () => void;
 }) {
   const [content, setContent] = useState(post.content);
+  const [format, setFormat] = useState(post.format || "text");
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<string | null>(null);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [scheduledDate, setScheduledDate] = useState(
+    post.scheduled_at ? new Date(post.scheduled_at).toISOString().slice(0, 16) : ""
+  );
+  const [showScheduler, setShowScheduler] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(post.status);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.updatePost(post.id, { content });
+      await api.updatePost(post.id, { content, format } as Partial<Post>);
       onSaved();
     } catch (err) {
       console.error(err);
@@ -303,99 +311,273 @@ function PostEditor({
   };
 
   const handleApprove = async () => {
-    await api.updatePost(post.id, { content, status: "approved" });
+    await api.updatePost(post.id, { content, status: "approved", format } as Partial<Post>);
+    setCurrentStatus("approved");
     onSaved();
+  };
+
+  const handleSchedule = async () => {
+    if (!scheduledDate) return;
+    await api.updatePost(post.id, {
+      content,
+      format,
+      status: "scheduled",
+      scheduled_at: new Date(scheduledDate).toISOString(),
+    } as Partial<Post>);
+    setCurrentStatus("scheduled");
+    setShowScheduler(false);
+    onSaved();
+  };
+
+  const handlePublish = async () => {
+    if (!confirm("Publier ce post sur LinkedIn maintenant ?")) return;
+    setPublishing(true);
+    setPublishResult(null);
+    try {
+      // Save content first if changed
+      if (content !== post.content || format !== post.format) {
+        await api.updatePost(post.id, { content, format } as Partial<Post>);
+      }
+      const result = await api.publishPost(post.id);
+      setPublishResult("Publié sur LinkedIn !");
+      setCurrentStatus("published");
+      onSaved();
+    } catch (err) {
+      setPublishResult(`Erreur: ${err instanceof Error ? err.message : "Échec de la publication"}`);
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const handleDelete = async () => {
     if (!confirm("Supprimer ce post ?")) return;
     await api.deletePost(post.id);
     onSaved();
+    onClose();
   };
 
   const wordCount = content.split(/\s+/).filter(Boolean).length;
+  const formatOptions = [
+    { value: "text", label: "Texte seul", icon: "📝" },
+    { value: "image_text", label: "Image + texte", icon: "🖼" },
+    { value: "carousel", label: "Carousel", icon: "📑" },
+  ];
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-[680px] w-full max-h-[95vh] overflow-y-auto p-0">
-        {/* LinkedIn-style header */}
+      <DialogContent className="max-w-[900px] w-full max-h-[95vh] overflow-y-auto p-0">
+        {/* Header */}
         <div className="sticky top-0 bg-white z-10 border-b px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
-            <Badge className={statusConfig[post.status]?.className}>{statusConfig[post.status]?.label}</Badge>
+            <Badge className={statusConfig[currentStatus]?.className}>{statusConfig[currentStatus]?.label}</Badge>
             {pillarName && <Badge className="bg-blue-100 text-blue-700">{pillarName}</Badge>}
             {post.anti_ai_score !== null && <ValidationBadge score={post.anti_ai_score} />}
             <span className="text-xs text-gray-400">{wordCount} mots</span>
           </div>
+          <div className="flex items-center gap-1.5">
+            {formatOptions.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFormat(f.value)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                  format === f.value ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {f.icon} {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* LinkedIn-style post preview / editor */}
-        <div className="px-6 py-4">
-          {/* Author header — LinkedIn style */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0">
-              ST
+        <div className="flex flex-col lg:flex-row">
+          {/* Left: Content editor */}
+          <div className="flex-1 px-6 py-4 border-r min-w-0">
+            {/* Author header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+                ST
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm leading-tight">Sébastien Tortu</p>
+                <p className="text-[11px] text-gray-500 leading-tight">Fondateur Boost Conversion | Expert CRO</p>
+              </div>
             </div>
+
+            {/* Content */}
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className="w-full min-h-[350px] border-0 shadow-none focus-visible:ring-0 text-[14px] leading-[1.42] text-gray-900 resize-none p-0"
+              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
+            />
+
+            {/* Engagement bar */}
+            <div className="border-t mt-4 pt-3 flex items-center gap-6 text-gray-400 text-xs">
+              <span>👍 J&apos;aime</span>
+              <span>💬 Commenter</span>
+              <span>🔄 Republier</span>
+              <span>📤 Envoyer</span>
+            </div>
+          </div>
+
+          {/* Right: Visual + Scheduling panel */}
+          <div className="w-full lg:w-[300px] p-4 space-y-4 bg-gray-50">
+            {/* Format-specific visual section */}
             <div>
-              <p className="font-semibold text-gray-900 text-[15px] leading-tight">Sébastien Tortu</p>
-              <p className="text-xs text-gray-500 leading-tight">Fondateur Boost Conversion | Expert CRO & Post-Clic</p>
-              <p className="text-xs text-gray-400">Maintenant</p>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Visuel</h3>
+              {format === "text" && (
+                <div className="bg-white rounded-lg p-3 border text-center">
+                  <p className="text-sm text-gray-500">Post texte uniquement</p>
+                  <p className="text-xs text-gray-400 mt-1">Pas de visuel attaché</p>
+                </div>
+              )}
+              {format === "image_text" && (
+                <div className="space-y-2">
+                  {post.image_url ? (
+                    <div className="relative">
+                      <img src={post.image_url} alt="Post visual" className="w-full rounded-lg border" />
+                      <button
+                        onClick={() => api.updatePost(post.id, { image_url: "" } as Partial<Post>).then(onSaved)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                      >x</button>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-lg p-4 border border-dashed border-gray-300 text-center">
+                      <p className="text-sm text-gray-500">Aucune image</p>
+                      <p className="text-xs text-gray-400 mt-1">Fonctionnalité upload bientôt disponible</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              {format === "carousel" && (
+                <div className="space-y-2">
+                  {post.carousel_url ? (
+                    <div className="bg-white rounded-lg p-3 border">
+                      <p className="text-sm text-green-700">Carousel PDF prêt</p>
+                      <a href={post.carousel_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline">Voir le PDF</a>
+                    </div>
+                  ) : (
+                    <div className="bg-white rounded-lg p-4 border border-dashed border-gray-300 text-center">
+                      <p className="text-sm text-gray-500">Aucun carousel</p>
+                      <p className="text-xs text-gray-400 mt-1">Fonctionnalité génération bientôt disponible</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
 
-          {/* Content editor — LinkedIn feed width */}
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="w-full min-h-[450px] border-0 shadow-none focus-visible:ring-0 text-[14px] leading-[1.42] text-gray-900 resize-none p-0 placeholder:text-gray-400"
-            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}
-          />
+            {/* Scheduling */}
+            <div>
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Programmation</h3>
+              {currentStatus === "scheduled" && post.scheduled_at ? (
+                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                  <p className="text-sm text-purple-700 font-medium">Programmé pour :</p>
+                  <p className="text-sm text-purple-900">
+                    {new Date(post.scheduled_at).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                    {" à "}
+                    {new Date(post.scheduled_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              ) : currentStatus === "published" ? (
+                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                  <p className="text-sm text-green-700 font-medium">Publié</p>
+                  {post.published_at && (
+                    <p className="text-xs text-green-600">
+                      {new Date(post.published_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  )}
+                </div>
+              ) : showScheduler ? (
+                <div className="bg-white rounded-lg p-3 border space-y-2">
+                  <input
+                    type="datetime-local"
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full text-sm border rounded px-2 py-1.5"
+                    min={new Date().toISOString().slice(0, 16)}
+                  />
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleSchedule} disabled={!scheduledDate} className="flex-1 text-xs">
+                      Programmer
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowScheduler(false)} className="text-xs">
+                      Annuler
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowScheduler(true)}
+                  className="w-full text-xs"
+                >
+                  Programmer une date
+                </Button>
+              )}
+            </div>
 
-          {/* LinkedIn-style engagement bar */}
-          <div className="border-t mt-4 pt-3 flex items-center gap-6 text-gray-500 text-xs">
-            <span>👍 J&apos;aime</span>
-            <span>💬 Commenter</span>
-            <span>🔄 Republier</span>
-            <span>📤 Envoyer</span>
+            {/* Validation */}
+            {validation && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Validation anti-IA</h3>
+                <div className="space-y-1.5">
+                  <ValidationBadge score={validation.score} />
+                  {validation.issues.length === 0 ? (
+                    <p className="text-xs text-green-600">Le post semble naturel.</p>
+                  ) : (
+                    validation.issues.map((issue, i) => (
+                      <div key={i} className={`text-xs rounded px-2 py-1.5 ${issue.severity === "error" ? "bg-red-50 text-red-700" : "bg-yellow-50 text-yellow-700"}`}>
+                        <span className="font-medium">{issue.rule}</span>
+                        <span className="block mt-0.5">{issue.detail}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Publish result */}
+            {publishResult && (
+              <div className={`rounded-lg p-3 text-sm ${publishResult.startsWith("Erreur") ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+                {publishResult}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Action bar */}
-        <div className="border-t px-6 py-3 flex gap-2 flex-wrap bg-gray-50">
-          <Button onClick={handleSave} disabled={saving || content === post.content} size="sm">
+        {/* Bottom action bar */}
+        <div className="border-t px-6 py-3 flex gap-2 flex-wrap bg-white sticky bottom-0">
+          <Button onClick={handleSave} disabled={saving || (content === post.content && format === post.format)} size="sm">
             {saving ? "Sauvegarde..." : "Sauvegarder"}
           </Button>
           <Button variant="outline" onClick={handleValidate} size="sm">
             Valider anti-IA
           </Button>
-          {post.status === "draft" && (
+          {(currentStatus === "draft" || currentStatus === "review") && (
             <Button variant="outline" onClick={handleApprove} size="sm" className="text-green-700 border-green-300 hover:bg-green-50">
               Approuver
+            </Button>
+          )}
+          {currentStatus !== "published" && (
+            <Button
+              onClick={handlePublish}
+              disabled={publishing}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {publishing ? (
+                <span className="flex items-center gap-1.5">
+                  <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  Publication...
+                </span>
+              ) : "Publier sur LinkedIn"}
             </Button>
           )}
           <Button variant="outline" onClick={handleDelete} size="sm" className="text-red-500 border-red-200 hover:bg-red-50 ml-auto">
             Supprimer
           </Button>
         </div>
-
-        {/* Validation results */}
-        {validation && (
-          <div className="px-6 py-3 border-t space-y-2">
-            <div className="flex items-center gap-2">
-              <h4 className="text-sm font-medium">Validation anti-IA</h4>
-              <ValidationBadge score={validation.score} />
-            </div>
-            {validation.issues.length === 0 ? (
-              <p className="text-sm text-green-600">Aucun problème. Le post semble naturel.</p>
-            ) : (
-              validation.issues.map((issue, i) => (
-                <div key={i} className={`text-sm rounded px-3 py-2 ${issue.severity === "error" ? "bg-red-50 text-red-700" : "bg-yellow-50 text-yellow-700"}`}>
-                  <span className="font-medium">{issue.rule}</span>
-                  <span className="block text-xs mt-0.5">{issue.detail}</span>
-                  </div>
-                ))
-              )}
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );

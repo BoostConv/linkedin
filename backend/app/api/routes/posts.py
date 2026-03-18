@@ -31,8 +31,10 @@ class PostCreate(BaseModel):
 class PostUpdate(BaseModel):
     content: str | None = None
     status: str | None = None
+    format: str | None = None
     scheduled_at: datetime | None = None
     image_url: str | None = None
+    carousel_url: str | None = None
 
 
 class PostResponse(BaseModel):
@@ -167,6 +169,59 @@ async def update_post(
     await db.commit()
     await db.refresh(post)
     return post
+
+
+@router.post("/{post_id}/publish/")
+async def publish_post(
+    post_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Publish a post to LinkedIn immediately."""
+    from app.services.linkedin.publisher import publish_text_post, publish_image_post, publish_document_post
+    import httpx
+
+    result = await db.execute(
+        select(Post).where(Post.id == post_id, Post.user_id == current_user.id)
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    if not current_user.linkedin_access_token or not current_user.linkedin_person_id:
+        raise HTTPException(status_code=400, detail="LinkedIn non connecté. Allez dans Settings pour connecter votre compte.")
+
+    token = current_user.linkedin_access_token
+    person_id = current_user.linkedin_person_id
+
+    try:
+        if post.format == "image_text" and post.image_url:
+            # Download image then publish
+            async with httpx.AsyncClient() as client:
+                img_resp = await client.get(post.image_url)
+                img_resp.raise_for_status()
+            linkedin_id = await publish_image_post(token, person_id, post.content, img_resp.content)
+        elif post.format == "carousel" and post.carousel_url:
+            # Download PDF then publish
+            async with httpx.AsyncClient() as client:
+                pdf_resp = await client.get(post.carousel_url)
+                pdf_resp.raise_for_status()
+            linkedin_id = await publish_document_post(token, person_id, post.content, pdf_resp.content, "Carousel")
+        else:
+            linkedin_id = await publish_text_post(token, person_id, post.content)
+
+        post.status = "published"
+        post.published_at = datetime.utcnow()
+        post.linkedin_post_id = linkedin_id
+        await db.commit()
+        await db.refresh(post)
+
+        return {"status": "published", "linkedin_post_id": linkedin_id}
+
+    except Exception as e:
+        post.status = "failed"
+        await db.commit()
+        raise HTTPException(status_code=500, detail=f"Erreur de publication LinkedIn: {str(e)}")
 
 
 @router.delete("/{post_id}/", status_code=204)
