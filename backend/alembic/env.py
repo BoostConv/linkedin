@@ -8,11 +8,18 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 from app.database import Base
+from app.config import _fix_db_url
 from app.models import *  # noqa: F401,F403 — import all models so Alembic sees them
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Override sqlalchemy.url with DATABASE_URL env var if set (for Render / production)
+db_url = os.environ.get("DATABASE_URL_SYNC") or os.environ.get("DATABASE_URL")
+if db_url:
+    db_url = _fix_db_url(db_url, async_driver=False)
+    config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 
