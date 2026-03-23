@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,6 +11,7 @@ from app.models.idea import Idea
 from app.models.user import User
 from app.api.routes.auth import get_current_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -50,15 +52,19 @@ async def list_ideas(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Idea).where(Idea.user_id == current_user.id)
-    if status:
-        query = query.where(Idea.status == status)
-    if priority:
-        query = query.where(Idea.priority == priority)
-    query = query.order_by(Idea.created_at.desc()).offset(offset).limit(limit)
+    try:
+        query = select(Idea).where(Idea.user_id == current_user.id)
+        if status:
+            query = query.where(Idea.status == status)
+        if priority:
+            query = query.where(Idea.priority == priority)
+        query = query.order_by(Idea.created_at.desc()).offset(offset).limit(limit)
 
-    result = await db.execute(query)
-    return result.scalars().all()
+        result = await db.execute(query)
+        return result.scalars().all()
+    except Exception as e:
+        logger.error(f"Error listing ideas: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/", response_model=IdeaResponse, status_code=201)
