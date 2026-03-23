@@ -66,5 +66,19 @@ async def health():
     return {"status": "ok"}
 
 
+@_app.get("/api/debug/db/")
+async def debug_db():
+    """Debug endpoint to check DB connectivity."""
+    from app.database import async_session
+    from sqlalchemy import text
+    try:
+        async with async_session() as session:
+            result = await session.execute(text("SELECT count(*) FROM ideas"))
+            count = result.scalar()
+            return {"status": "ok", "ideas_count": count}
+    except Exception as e:
+        return {"status": "error", "detail": str(e), "type": type(e).__name__}
+
+
 # Wrap with trailing slash middleware for Vercel compatibility
 app = TrailingSlashMiddleware(_app)
